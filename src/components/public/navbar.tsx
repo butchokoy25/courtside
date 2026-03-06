@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Menu, X, Trophy, LogIn, LogOut, User } from "lucide-react"
+import { Menu, LogIn, LogOut, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { createClient } from "@/lib/supabase/client"
@@ -19,18 +19,18 @@ export function Navbar({ leagues }: { leagues: { slug: string; name: string }[] 
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [open, setOpen] = useState(false)
 
-  // Hide navbar on admin, score, login, register routes
-  const hiddenPrefixes = ["/admin", "/score", "/login", "/register"]
-  if (hiddenPrefixes.some((prefix) => pathname.startsWith(prefix))) {
-    return null
-  }
-
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
     })
   }, [])
+
+  // Hide navbar on admin, score, login, register routes
+  const hiddenPrefixes = ["/admin", "/score", "/login", "/register"]
+  if (hiddenPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+    return null
+  }
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -53,9 +53,8 @@ export function Navbar({ leagues }: { leagues: { slug: string; name: string }[] 
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-14 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg mr-6">
-          <Trophy className="size-5 text-primary" />
-          <span className="hidden sm:inline">Courtside</span>
+        <Link href="/" className="flex items-center gap-2 mr-6">
+          <span className="font-display text-2xl tracking-wider text-primary">COURTSIDE</span>
         </Link>
 
         {/* Desktop nav */}

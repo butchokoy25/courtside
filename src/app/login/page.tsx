@@ -28,10 +28,11 @@ export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, null)
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 court-pattern">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Sign In</CardTitle>
+          <div className="font-display text-3xl tracking-wider text-primary mb-1">COURTSIDE</div>
+          <CardTitle className="text-xl">Sign In</CardTitle>
           <CardDescription>
             Enter your credentials to access the dashboard
           </CardDescription>

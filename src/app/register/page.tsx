@@ -44,10 +44,11 @@ export default function RegisterPage() {
   const displayError = clientError ?? state?.error ?? null
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 court-pattern">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Create Account</CardTitle>
+          <div className="font-display text-3xl tracking-wider text-primary mb-1">COURTSIDE</div>
+          <CardTitle className="text-xl">Create Account</CardTitle>
           <CardDescription>
             Sign up to start tracking your league stats
           </CardDescription>
