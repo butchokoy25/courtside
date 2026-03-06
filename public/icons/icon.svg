@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <circle cx="256" cy="256" r="240" fill="#f97316" stroke="#ea580c" stroke-width="16"/>
+  <!-- Horizontal seam -->
+  <path d="M16 256 Q256 200 496 256" fill="none" stroke="#ea580c" stroke-width="8"/>
+  <path d="M16 256 Q256 312 496 256" fill="none" stroke="#ea580c" stroke-width="8"/>
+  <!-- Vertical seam -->
+  <line x1="256" y1="16" x2="256" y2="496" stroke="#ea580c" stroke-width="8"/>
+  <!-- Curved side seams -->
+  <path d="M100 40 Q60 256 100 472" fill="none" stroke="#ea580c" stroke-width="6"/>
+  <path d="M412 40 Q452 256 412 472" fill="none" stroke="#ea580c" stroke-width="6"/>
+</svg>

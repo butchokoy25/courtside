@@ -1,65 +1,304 @@
-import Image from "next/image";
+import Link from "next/link"
+import { createClient } from "@/lib/supabase/server"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Trophy, ArrowRight, Calendar } from "lucide-react"
 
-export default function Home() {
+export default async function HomePage() {
+  const supabase = await createClient()
+
+  // Fetch all leagues with their teams count and active season
+  const { data: leagues, error: leaguesError } = await supabase
+    .from("leagues")
+    .select("id, name, slug, description")
+    .order("name")
+  if (leaguesError) console.error('[HOME] Failed to fetch leagues:', leaguesError.message)
+
+  // Fetch active seasons for each league
+  const { data: activeSeasons, error: seasonsError } = await supabase
+    .from("seasons")
+    .select("id, league_id, name")
+    .eq("is_active", true)
+  if (seasonsError) console.error('[HOME] Failed to fetch active seasons:', seasonsError.message)
+
+  // Fetch team counts per league
+  const { data: teams, error: teamsError } = await supabase
+    .from("teams")
+    .select("id, league_id")
+  if (teamsError) console.error('[HOME] Failed to fetch teams:', teamsError.message)
+
+  // Fetch last 5 finalized games with team info
+  const { data: recentGames, error: recentGamesError } = await supabase
+    .from("games")
+    .select(`
+      id,
+      home_score,
+      away_score,
+      scheduled_at,
+      status,
+      home_team:teams!games_home_team_id_fkey(id, name, abbreviation, color),
+      away_team:teams!games_away_team_id_fkey(id, name, abbreviation, color),
+      season:seasons!games_season_id_fkey(id, league_id)
+    `)
+    .eq("status", "final")
+    .order("scheduled_at", { ascending: false })
+    .limit(5)
+  if (recentGamesError) console.error('[HOME] Failed to fetch recent games:', recentGamesError.message)
+
+  // Fetch standings for active seasons (top 4 per season)
+  const activeSeasonIds = activeSeasons?.map((s) => s.id) ?? []
+  let standings: Array<{
+    team_id: string
+    season_id: string
+    team_name: string
+    team_abbreviation: string
+    team_color: string
+    wins: number
+    losses: number
+    win_pct: number | null
+  }> = []
+
+  if (activeSeasonIds.length > 0) {
+    const { data, error: standingsError } = await supabase
+      .from("team_standings")
+      .select("*")
+      .in("season_id", activeSeasonIds)
+      .order("win_pct", { ascending: false })
+    if (standingsError) console.error('[HOME] Failed to fetch standings:', standingsError.message)
+
+    standings = (data ?? []) as typeof standings
+  }
+
+  // Build helper maps
+  const seasonByLeague = new Map(
+    activeSeasons?.map((s) => [s.league_id, s]) ?? []
+  )
+  const teamCountByLeague = new Map<string, number>()
+  teams?.forEach((t) => {
+    teamCountByLeague.set(t.league_id, (teamCountByLeague.get(t.league_id) ?? 0) + 1)
+  })
+
+  // Group standings by season
+  const standingsBySeason = new Map<string, typeof standings>()
+  standings.forEach((s) => {
+    if (!standingsBySeason.has(s.season_id)) {
+      standingsBySeason.set(s.season_id, [])
+    }
+    standingsBySeason.get(s.season_id)!.push(s)
+  })
+
+  const hasLeagues = leagues && leagues.length > 0
+  const hasRecentGames = recentGames && recentGames.length > 0
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <section className="border-b bg-muted/30">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Trophy className="size-8 text-primary" />
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Courtside
+              </h1>
+            </div>
+            <p className="mx-auto max-w-2xl text-muted-foreground text-lg">
+              Scores, standings, and stats for your weekend basketball leagues.
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-10">
+        {/* League Cards */}
+        <section>
+          <h2 className="text-xl font-semibold mb-4">Leagues</h2>
+          {hasLeagues ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {leagues.map((league) => {
+                const season = seasonByLeague.get(league.id)
+                const teamCount = teamCountByLeague.get(league.id) ?? 0
+                return (
+                  <Link key={league.id} href={`/league/${league.slug}`}>
+                    <Card className="transition-shadow hover:shadow-md h-full">
+                      <CardHeader>
+                        <CardTitle className="text-lg">{league.name}</CardTitle>
+                        {league.description && (
+                          <CardDescription>{league.description}</CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <Badge variant="secondary">
+                            {teamCount} {teamCount === 1 ? "team" : "teams"}
+                          </Badge>
+                          {season && (
+                            <Badge variant="outline">{season.name}</Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                )
+              })}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                No leagues have been created yet. Check back soon!
+              </CardContent>
+            </Card>
+          )}
+        </section>
+
+        {/* Recent Games & Standings side by side on desktop */}
+        <div className="grid gap-8 lg:grid-cols-2">
+          {/* Recent Games */}
+          <section>
+            <h2 className="text-xl font-semibold mb-4">Recent Games</h2>
+            {hasRecentGames ? (
+              <div className="space-y-3">
+                {recentGames.map((game) => {
+                  const homeTeam = game.home_team as unknown as { id: string; name: string; abbreviation: string; color: string }
+                  const awayTeam = game.away_team as unknown as { id: string; name: string; abbreviation: string; color: string }
+                  const homeWon = game.home_score > game.away_score
+                  const gameDate = new Date(game.scheduled_at)
+
+                  return (
+                    <Link key={game.id} href={`/game/${game.id}`}>
+                      <Card className="transition-shadow hover:shadow-md">
+                        <CardContent className="py-3 px-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 space-y-1.5">
+                              {/* Away team */}
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="size-2.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: awayTeam.color }}
+                                />
+                                <span className={`text-sm font-medium ${!homeWon ? "font-bold" : "text-muted-foreground"}`}>
+                                  {awayTeam.name}
+                                </span>
+                                <span className={`ml-auto text-sm tabular-nums ${!homeWon ? "font-bold" : "text-muted-foreground"}`}>
+                                  {game.away_score}
+                                </span>
+                              </div>
+                              {/* Home team */}
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="size-2.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: homeTeam.color }}
+                                />
+                                <span className={`text-sm font-medium ${homeWon ? "font-bold" : "text-muted-foreground"}`}>
+                                  {homeTeam.name}
+                                </span>
+                                <span className={`ml-auto text-sm tabular-nums ${homeWon ? "font-bold" : "text-muted-foreground"}`}>
+                                  {game.home_score}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ml-4 flex flex-col items-end text-xs text-muted-foreground">
+                              <Badge variant="secondary" className="text-[10px]">Final</Badge>
+                              <span className="mt-1">
+                                {gameDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  )
+                })}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  <Calendar className="size-8 mx-auto mb-2 opacity-50" />
+                  No games have been played yet. Stay tuned!
+                </CardContent>
+              </Card>
+            )}
+          </section>
+
+          {/* Quick Standings */}
+          <section>
+            <h2 className="text-xl font-semibold mb-4">Standings</h2>
+            {activeSeasons && activeSeasons.length > 0 ? (
+              <div className="space-y-4">
+                {activeSeasons.map((season) => {
+                  const league = leagues?.find((l) => l.id === season.league_id)
+                  const seasonStandings = (standingsBySeason.get(season.id) ?? []).slice(0, 4)
+
+                  return (
+                    <Card key={season.id}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">
+                          {league?.name ?? "League"}
+                          <span className="text-muted-foreground font-normal text-sm ml-2">
+                            {season.name}
+                          </span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {seasonStandings.length > 0 ? (
+                          <>
+                            <div className="space-y-2">
+                              {seasonStandings.map((team, index) => (
+                                <div
+                                  key={team.team_id}
+                                  className="flex items-center gap-3 text-sm"
+                                >
+                                  <span className="w-5 text-muted-foreground text-right tabular-nums">
+                                    {index + 1}
+                                  </span>
+                                  <span
+                                    className="size-2.5 rounded-full shrink-0"
+                                    style={{ backgroundColor: team.team_color }}
+                                  />
+                                  <span className="font-medium flex-1 truncate">
+                                    {team.team_name}
+                                  </span>
+                                  <span className="text-muted-foreground tabular-nums">
+                                    {team.wins}-{team.losses}
+                                  </span>
+                                  <span className="w-10 text-right text-muted-foreground tabular-nums">
+                                    {team.win_pct != null
+                                      ? (Number(team.win_pct) * 100).toFixed(0) + "%"
+                                      : "--"}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            {league && (
+                              <Link
+                                href={`/league/${league.slug}`}
+                                className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-3"
+                              >
+                                View full standings
+                                <ArrowRight className="size-3.5" />
+                              </Link>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No games finalized yet this season.
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  No active seasons right now.
+                </CardContent>
+              </Card>
+            )}
+          </section>
         </div>
-      </main>
-    </div>
-  );
+      </div>
+    </main>
+  )
 }

@@ -1,0 +1,16 @@
+{
+  "name": "Courtside - Basketball League Stats",
+  "short_name": "Courtside",
+  "description": "Basketball league statistics, schedules, and live scoring",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
