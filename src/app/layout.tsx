@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   title: "Courtside - Basketball League Stats",
   description: "Basketball league statistics, schedules, box scores, and live scoring",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
