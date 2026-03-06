@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { logger } from '@/lib/utils/logger'
+import { requireActionAuth } from '@/lib/auth/utils'
 
 export async function createGameEvent(data: {
   game_id: string
@@ -13,6 +14,9 @@ export async function createGameEvent(data: {
   court_x?: number | null
   court_y?: number | null
 }) {
+  const auth = await requireActionAuth(['admin', 'scorer'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const { error } = await supabase.from('game_events').insert({
     game_id: data.game_id,
@@ -38,6 +42,9 @@ export async function createGameEvent(data: {
 }
 
 export async function deleteGameEvent(eventId: string, gameId: string) {
+  const auth = await requireActionAuth(['admin', 'scorer'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const { error } = await supabase
     .from('game_events')
@@ -105,6 +112,9 @@ export async function updateGameStatus(
   gameId: string,
   status: 'scheduled' | 'in_progress' | 'final'
 ) {
+  const auth = await requireActionAuth(['admin', 'scorer'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const { error } = await supabase
     .from('games')
@@ -119,6 +129,9 @@ export async function updateGameStatus(
 }
 
 export async function updateGamePeriod(gameId: string, period: number) {
+  const auth = await requireActionAuth(['admin', 'scorer'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const { error } = await supabase
     .from('games')

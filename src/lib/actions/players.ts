@@ -3,8 +3,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { logger } from '@/lib/utils/logger'
+import { requireActionAuth } from '@/lib/auth/utils'
 
 export async function createPlayer(formData: FormData) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const first_name = formData.get('first_name') as string
   const last_name = formData.get('last_name') as string
@@ -28,6 +32,9 @@ export async function createPlayer(formData: FormData) {
 }
 
 export async function updatePlayer(id: string, formData: FormData) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const first_name = formData.get('first_name') as string
   const last_name = formData.get('last_name') as string
@@ -52,6 +59,9 @@ export async function updatePlayer(id: string, formData: FormData) {
 }
 
 export async function deletePlayer(id: string) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const { error } = await supabase.from('players').delete().eq('id', id)
   if (error) {
@@ -64,6 +74,9 @@ export async function deletePlayer(id: string) {
 
 // Roster management
 export async function assignPlayerToTeam(formData: FormData) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const player_id = formData.get('player_id') as string
   const team_id = formData.get('team_id') as string
@@ -86,6 +99,9 @@ export async function assignPlayerToTeam(formData: FormData) {
 }
 
 export async function removePlayerFromTeam(rosterId: string) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const { error } = await supabase
     .from('team_rosters')

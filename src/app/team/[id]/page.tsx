@@ -110,6 +110,10 @@ export default async function TeamPage({
   const { id } = await params
   const supabase = await createClient()
 
+  // Validate UUID to prevent filter injection
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!UUID_REGEX.test(id)) notFound()
+
   // 1. Fetch team with league info
   const { data: team, error: teamError } = await supabase
     .from("teams")

@@ -3,8 +3,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { logger } from '@/lib/utils/logger'
+import { requireActionAuth } from '@/lib/auth/utils'
 
 export async function createGame(formData: FormData) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const season_id = formData.get('season_id') as string
   const home_team_id = formData.get('home_team_id') as string
@@ -30,6 +34,9 @@ export async function createGame(formData: FormData) {
 }
 
 export async function updateGame(id: string, formData: FormData) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const season_id = formData.get('season_id') as string
   const home_team_id = formData.get('home_team_id') as string
@@ -56,6 +63,9 @@ export async function updateGame(id: string, formData: FormData) {
 }
 
 export async function deleteGame(id: string) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const { error } = await supabase.from('games').delete().eq('id', id)
 

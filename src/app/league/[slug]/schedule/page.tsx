@@ -38,6 +38,10 @@ export default async function SchedulePage({
   const { team: filterTeamId } = await searchParams
   const supabase = await createClient()
 
+  // Validate UUID to prevent filter injection
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const safeFilterTeamId = filterTeamId && UUID_REGEX.test(filterTeamId) ? filterTeamId : undefined
+
   // Fetch the league
   const { data: league } = await supabase
     .from("leagues")
@@ -94,8 +98,8 @@ export default async function SchedulePage({
       .order("scheduled_at", { ascending: true })
 
     // Apply team filter if provided
-    if (filterTeamId) {
-      query = query.or(`home_team_id.eq.${filterTeamId},away_team_id.eq.${filterTeamId}`)
+    if (safeFilterTeamId) {
+      query = query.or(`home_team_id.eq.${safeFilterTeamId},away_team_id.eq.${safeFilterTeamId}`)
     }
 
     const { data, error: gamesError } = await query
@@ -167,7 +171,7 @@ export default async function SchedulePage({
                 <Link
                   href={`/league/${slug}/schedule`}
                   className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    !filterTeamId
+                    !safeFilterTeamId
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                   }`}
@@ -179,7 +183,7 @@ export default async function SchedulePage({
                     key={team.id}
                     href={`/league/${slug}/schedule?team=${team.id}`}
                     className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                      filterTeamId === team.id
+                      safeFilterTeamId === team.id
                         ? "bg-primary text-primary-foreground"
                         : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                     }`}
@@ -346,7 +350,7 @@ export default async function SchedulePage({
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Calendar className="size-8 mx-auto mb-2 opacity-50" />
-                  {filterTeamId
+                  {safeFilterTeamId
                     ? "No games found for this team."
                     : "No games scheduled for this season yet."}
                 </CardContent>

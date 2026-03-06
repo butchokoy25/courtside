@@ -3,8 +3,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { logger } from '@/lib/utils/logger'
+import { requireActionAuth } from '@/lib/auth/utils'
 
 export async function createLeague(formData: FormData) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const name = formData.get('name') as string
   const slug = formData.get('slug') as string
@@ -25,6 +29,9 @@ export async function createLeague(formData: FormData) {
 }
 
 export async function updateLeague(id: string, formData: FormData) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const name = formData.get('name') as string
   const slug = formData.get('slug') as string
@@ -48,6 +55,9 @@ export async function updateLeague(id: string, formData: FormData) {
 }
 
 export async function deleteLeague(id: string) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const { error } = await supabase.from('leagues').delete().eq('id', id)
   if (error) {
@@ -59,6 +69,9 @@ export async function deleteLeague(id: string) {
 }
 
 export async function createSeason(formData: FormData) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const league_id = formData.get('league_id') as string
   const name = formData.get('name') as string
@@ -83,6 +96,9 @@ export async function createSeason(formData: FormData) {
 }
 
 export async function updateSeason(id: string, formData: FormData) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const name = formData.get('name') as string
   const start_date = (formData.get('start_date') as string) || null
@@ -107,6 +123,9 @@ export async function updateSeason(id: string, formData: FormData) {
 }
 
 export async function deleteSeason(id: string) {
+  const auth = await requireActionAuth(['admin'])
+  if (auth.error) return { error: auth.error }
+
   const supabase = await createClient()
   const { error } = await supabase.from('seasons').delete().eq('id', id)
   if (error) {

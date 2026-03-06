@@ -40,6 +40,32 @@ export async function requireAdmin() {
   return { user, role: profile.role }
 }
 
+/**
+ * Auth check for server actions — returns error object instead of redirecting.
+ * Use in server actions where redirect() is not appropriate.
+ */
+export async function requireActionAuth(allowedRoles: string[] = ['admin', 'scorer']) {
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    return { error: 'Not authenticated' as const, user: null, role: null }
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || !allowedRoles.includes(profile.role)) {
+    logger.warn('auth', 'Unauthorized action attempt', { userId: user.id, role: profile?.role, allowedRoles })
+    return { error: 'Not authorized' as const, user, role: profile?.role ?? null }
+  }
+
+  return { error: null, user, role: profile.role }
+}
+
 export async function getProfile() {
   const supabase = await createClient()
   const {
